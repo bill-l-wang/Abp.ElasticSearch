@@ -1,9 +1,11 @@
-﻿namespace Abp.ElasticSearch.Configuration
+﻿using Volo.Abp.DependencyInjection;
+
+namespace Abp.ElasticSearch.Configuration
 {
     /// <summary>
     /// 连接配置
     /// </summary>
-    public class ElasticSearchConfiguration : IElasticSearchConfiguration
+    public class ElasticSearchConfiguration : IElasticSearchConfiguration, ISingletonDependency
     {
         /// <summary>
         /// 连接字符串支持多个节点主机 使用|进行分隔

@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Abp.Application.Services.Dto;
-using Abp.Dependency;
 using Nest;
 
 namespace Abp.ElasticSearch
@@ -10,7 +8,7 @@ namespace Abp.ElasticSearch
     /// <summary>
     /// 接口
     /// </summary>
-    public interface IElasticsearch : ITransientDependency
+    public interface IElasticSearch
     {
         /// <summary>
         /// CreateEsIndex Not Mapping
@@ -33,7 +31,7 @@ namespace Abp.ElasticSearch
         /// <param name="numberOfReplicas"></param>
         /// <returns></returns>
         Task CreateIndexAsync<T, TKey>(string indexName, int shard = 1, int numberOfReplicas = 1)
-            where T : EntityDto<TKey>;
+            where T : class;
 
         /// <summary>
         /// ReIndex
@@ -42,7 +40,7 @@ namespace Abp.ElasticSearch
         /// <typeparam name="TKey"></typeparam>
         /// <param name="indexName"></param>
         /// <returns></returns>
-        Task ReIndex<T, TKey>(string indexName) where T : EntityDto<TKey>;
+        Task ReIndex<T, TKey>(string indexName) where T : class;
 
 
         /// <summary>
@@ -53,7 +51,7 @@ namespace Abp.ElasticSearch
         /// <param name="indexName"></param>
         /// <param name="model"></param>
         /// <returns></returns>
-        Task AddOrUpdateAsync<T, TKey>(string indexName, T model) where T : EntityDto<TKey>;
+        Task AddOrUpdateAsync<T, TKey>(string indexName, T model) where T : class;
 
 
         /// <summary>
@@ -65,8 +63,8 @@ namespace Abp.ElasticSearch
         /// <param name="list"></param>
         /// <param name="bulkNum">bulkNum</param>
         /// <returns></returns>
-        Task BulkAddorUpdateAsync<T, TKey>(string indexName, List<T> list, int bulkNum = 1000)
-            where T : EntityDto<TKey>;
+        Task BulkAddOrUpdateAsync<T, TKey>(string indexName, List<T> list, int bulkNum = 1000)
+            where T : class;
 
         /// <summary>
         ///  Bulk Delete Document,Default bulkNum is 1000
@@ -77,7 +75,7 @@ namespace Abp.ElasticSearch
         /// <param name="list"></param>
         /// <param name="bulkNum">bulkNum</param>
         /// <returns></returns>
-        Task BulkDeleteAsync<T, TKey>(string indexName, List<T> list, int bulkNum = 1000) where T : EntityDto<TKey>;
+        Task BulkDeleteAsync<T, TKey>(string indexName, List<T> list, int bulkNum = 1000) where T : class;
 
         /// <summary>
         /// Delete Document
@@ -88,7 +86,7 @@ namespace Abp.ElasticSearch
         /// <param name="typeName"></param>
         /// <param name="model"></param>
         /// <returns></returns>
-        Task DeleteAsync<T, TKey>(string indexName, T model) where T : EntityDto<TKey>;
+        Task DeleteAsync<T, TKey>(string indexName, T model) where T : class;
 
         /// <summary>
         /// Delete Index
@@ -105,7 +103,7 @@ namespace Abp.ElasticSearch
         /// <typeparam name="TKey"></typeparam>
         /// <param name="indexName"></param>
         /// <returns></returns>
-        Task ReBuild<T, TKey>(string indexName) where T : EntityDto<TKey>;
+        Task ReBuild<T, TKey>(string indexName) where T : class;
 
         /// <summary>
         /// search
@@ -125,10 +123,10 @@ namespace Abp.ElasticSearch
         Task<ISearchResponse<T>> SearchAsync<T, TKey>(string indexName, SearchDescriptor<T> query,
             int skip, int size, string[] includeFields = null, string preTags = "<strong style=\"color: red;\">",
             string postTags = "</strong>", bool disableHigh = false, params string[] highField)
-            where T : EntityDto<TKey>;
+            where T : class;
 
 
         Task<CountResponse> CountAsync<T, TKey>(string indexName,
-            Func<QueryContainerDescriptor<T>, QueryContainer> query) where T : EntityDto<TKey>;
+            Func<QueryContainerDescriptor<T>, QueryContainer> query) where T : class;
     }
 }

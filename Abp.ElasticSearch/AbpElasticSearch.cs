@@ -2,17 +2,17 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Abp.Application.Services.Dto;
 using Abp.ElasticSearch.Configuration;
 using Elasticsearch.Net;
 using Nest;
+using Volo.Abp.DependencyInjection;
 
 namespace Abp.ElasticSearch
 {
     /// <summary>
     /// AbpElasticSearchPlug
     /// </summary>
-    public class AbpElasticSearch : IElasticsearch
+    public class AbpElasticSearch : IElasticSearch, ITransientDependency
     {
         public IElasticClient EsClient { get; set; }
 
@@ -84,7 +84,7 @@ namespace Abp.ElasticSearch
         /// <param name="numberOfReplicas"></param>
         /// <returns></returns>
         public virtual async Task CreateIndexAsync<T, TKey>(string indexName, int shard = 1, int numberOfReplicas = 1)
-            where T : EntityDto<TKey>
+            where T : class
         {
             var exits = await EsClient.Indices.ExistsAsync(indexName);
 
@@ -116,7 +116,7 @@ namespace Abp.ElasticSearch
         /// <param name="indexName"></param>
         /// <param name="model"></param>
         /// <returns></returns>
-        public virtual async Task AddOrUpdateAsync<T, TKey>(string indexName, T model) where T : EntityDto<TKey>
+        public virtual async Task AddOrUpdateAsync<T, TKey>(string indexName, T model) where T : class
         {
             var exits = EsClient.DocumentExists(DocumentPath<T>.Id(new Id(model)), dd => dd.Index(indexName));
 
@@ -133,13 +133,13 @@ namespace Abp.ElasticSearch
             {
                 var result = await EsClient.IndexAsync<T>(model, ss => ss.Index(indexName));
                 if (result.ServerError == null) return;
-                throw new ElasticSearchException($"Insert Docuemnt failed at index {indexName} :" +
+                throw new ElasticSearchException($"Insert Document failed at index {indexName} :" +
                                                  result.ServerError.Error.Reason);
             }
         }
 
         /// <summary>
-        /// Bulk AddOrUpdate Docuemnt,Default bulkNum is 1000
+        /// Bulk AddOrUpdate Document,Default bulkNum is 1000
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <typeparam name="TKey"></typeparam>
@@ -147,13 +147,13 @@ namespace Abp.ElasticSearch
         /// <param name="list"></param>
         /// <param name="bulkNum">bulkNum</param>
         /// <returns></returns>
-        public virtual async Task BulkAddorUpdateAsync<T, TKey>(string indexName, List<T> list, int bulkNum = 1000)
-            where T : EntityDto<TKey>
+        public virtual async Task BulkAddOrUpdateAsync<T, TKey>(string indexName, List<T> list, int bulkNum = 1000)
+            where T : class
         {
             await BulkAddOrUpdate<T, TKey>(indexName, list);
         }
 
-        private async Task BulkAddOrUpdate<T, TKey>(string indexName, List<T> list) where T : EntityDto<TKey>
+        private async Task BulkAddOrUpdate<T, TKey>(string indexName, List<T> list) where T : class
         {
             var bulk = new BulkRequest(indexName)
             {
@@ -167,10 +167,10 @@ namespace Abp.ElasticSearch
             var response = await EsClient.BulkAsync(bulk);
             if (response.Errors)
                 throw new ElasticSearchException(
-                    $"Bulk InsertOrUpdate Docuemnt failed at index {indexName} :{response.ServerError.Error.Reason}");
+                    $"Bulk InsertOrUpdate Document failed at index {indexName} :{response.ServerError.Error.Reason}");
         }
 
-        private async Task BulkDelete<T, TKey>(string indexName, List<T> list) where T : EntityDto<TKey>
+        private async Task BulkDelete<T, TKey>(string indexName, List<T> list) where T : class
         {
             var bulk = new BulkRequest(indexName)
             {
@@ -184,11 +184,11 @@ namespace Abp.ElasticSearch
             var response = await EsClient.BulkAsync(bulk);
             if (response.Errors)
                 throw new ElasticSearchException(
-                    $"Bulk Delete Docuemnt at index {indexName} :{response.ServerError.Error.Reason}");
+                    $"Bulk Delete Document at index {indexName} :{response.ServerError.Error.Reason}");
         }
 
         /// <summary>
-        ///  Bulk Delete Docuemnt,Default bulkNum is 1000
+        ///  Bulk Delete Document,Default bulkNum is 1000
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <typeparam name="TKey"></typeparam>
@@ -197,7 +197,7 @@ namespace Abp.ElasticSearch
         /// <param name="bulkNum">bulkNum</param>
         /// <returns></returns>
         public virtual async Task BulkDeleteAsync<T, TKey>(string indexName, List<T> list, int bulkNum = 100)
-            where T : EntityDto<TKey>
+            where T : class
         {
             if (list.Count <= bulkNum)
                 await BulkDelete<T, TKey>(indexName, list);
@@ -224,11 +224,11 @@ namespace Abp.ElasticSearch
         /// <param name="indexName"></param>
         /// <param name="model"></param>
         /// <returns></returns>
-        public virtual async Task DeleteAsync<T, TKey>(string indexName, T model) where T : EntityDto<TKey>
+        public virtual async Task DeleteAsync<T, TKey>(string indexName, T model) where T : class
         {
             var response = await EsClient.DeleteAsync(new DeleteRequest(indexName, new Id(model)));
             if (response.ServerError == null) return;
-            throw new Exception($"Delete Docuemnt at index {indexName} :{response.ServerError.Error.Reason}");
+            throw new Exception($"Delete Document at index {indexName} :{response.ServerError.Error.Reason}");
         }
 
         /// <summary>
@@ -243,7 +243,7 @@ namespace Abp.ElasticSearch
             throw new Exception($"Delete index {indexName} failed :{response.ServerError.Error.Reason}");
         }
 
-        public virtual async Task ReIndex<T, TKey>(string indexName) where T : EntityDto<TKey>
+        public virtual async Task ReIndex<T, TKey>(string indexName) where T : class
         {
             await DeleteIndexAsync(indexName);
             await CreateIndexAsync<T, TKey>(indexName);
@@ -256,7 +256,7 @@ namespace Abp.ElasticSearch
         /// <typeparam name="TKey"></typeparam>
         /// <param name="indexName"></param>
         /// <returns></returns>
-        public virtual async Task ReBuild<T, TKey>(string indexName) where T : EntityDto<TKey>
+        public virtual async Task ReBuild<T, TKey>(string indexName) where T : class
         {
             var result = await EsClient.Indices.GetAliasAsync(indexName);
             var oldName = result.Indices.Keys.First();
@@ -278,7 +278,7 @@ namespace Abp.ElasticSearch
 
             if (reResult.ServerError != null)
             {
-                throw new Exception($"reBuild {indexName} datas failed :{reResult.ServerError.Error.Reason}");
+                throw new Exception($"reBuild {indexName} data failed :{reResult.ServerError.Error.Reason}");
             }
 
             //删除旧索引
@@ -315,7 +315,7 @@ namespace Abp.ElasticSearch
         public virtual async Task<ISearchResponse<T>> SearchAsync<T, TKey>(string indexName, SearchDescriptor<T> query,
             int skip, int size, string[] includeFields = null,
             string preTags = "<strong style=\"color: red;\">", string postTags = "</strong>", bool disableHigh = false,
-            params string[] highField) where T : EntityDto<TKey>
+            params string[] highField) where T : class
         {
             query.Index(indexName);
             var highlight = new HighlightDescriptor<T>();
@@ -352,7 +352,7 @@ namespace Abp.ElasticSearch
 
         public virtual async Task<CountResponse> CountAsync<T, TKey>(string indexName,
             Func<QueryContainerDescriptor<T>, QueryContainer> query)
-            where T : EntityDto<TKey>
+            where T : class
         {
             var response = await EsClient.CountAsync<T>(c => c.Index(indexName).Query(query));
 

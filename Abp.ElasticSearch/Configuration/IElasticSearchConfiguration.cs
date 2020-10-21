@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace Abp.ElasticSearch.Configuration
+﻿namespace Abp.ElasticSearch.Configuration
 {
     public interface IElasticSearchConfiguration
     {
