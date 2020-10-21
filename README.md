@@ -1,6 +1,6 @@
 # AbpElasticSearch Module
-aspnetboilerplate repository
-> https://github.com/aspnetboilerplate/aspnetboilerplate
+abp vnext repository
+> https://github.com/abpframework/abp
 
 Nuget
 > https://www.nuget.org/packages/Abp.ElasticSearch/
