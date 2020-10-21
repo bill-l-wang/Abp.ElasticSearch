@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Nest;
 
-namespace Abp.ElasticSearch
+namespace AbpNext.ElasticSearch
 {
     /// <summary>
     /// 接口

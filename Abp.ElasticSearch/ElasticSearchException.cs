@@ -2,7 +2,7 @@
 using System.Runtime.Serialization;
 using Volo.Abp;
 
-namespace Abp.ElasticSearch
+namespace AbpNext.ElasticSearch
 {
     /// <summary>
     /// Es异常

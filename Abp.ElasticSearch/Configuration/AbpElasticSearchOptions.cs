@@ -1,4 +1,4 @@
-﻿namespace Abp.ElasticSearch.Configuration
+﻿namespace AbpNext.ElasticSearch.Configuration
 {
     public class AbpElasticSearchOptions
     {

@@ -2,13 +2,13 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Abp.ElasticSearch.Configuration;
+using AbpNext.ElasticSearch.Configuration;
 using Elasticsearch.Net;
 using Microsoft.Extensions.Options;
 using Nest;
 using Volo.Abp.DependencyInjection;
 
-namespace Abp.ElasticSearch
+namespace AbpNext.ElasticSearch
 {
     /// <summary>
     /// AbpElasticSearchPlug

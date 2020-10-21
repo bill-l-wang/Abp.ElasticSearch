@@ -9,6 +9,8 @@
     <Description></Description>
     <RepositoryUrl>https://github.com/bill-l-wang/Abp.ElasticSearch</RepositoryUrl>
     <PackageProjectUrl>https://github.com/bill-l-wang/Abp.ElasticSearch</PackageProjectUrl>
+    <AssemblyName>AbpNext.ElasticSearch</AssemblyName>
+    <RootNamespace>AbpNext.ElasticSearch</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>

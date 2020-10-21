@@ -1,6 +1,6 @@
 ﻿using Volo.Abp.Modularity;
 
-namespace Abp.ElasticSearch
+namespace AbpNext.ElasticSearch
 {
     public class AbpElasticSearchModule : AbpModule
     {
