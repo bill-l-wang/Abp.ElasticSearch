@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Abp.ElasticSearch.Configuration;
 using Elasticsearch.Net;
+using Microsoft.Extensions.Options;
 using Nest;
 using Volo.Abp.DependencyInjection;
 
@@ -15,15 +16,13 @@ namespace Abp.ElasticSearch
     public class AbpElasticSearch : IElasticSearch, ITransientDependency
     {
         public IElasticClient EsClient { get; set; }
+        private readonly AbpElasticSearchOptions _esOptions;
 
-        public AbpElasticSearch(IElasticSearchConfiguration elasticSearchConfiguration)
+        public AbpElasticSearch(IOptions<AbpElasticSearchOptions> esOptions)
         {
-            _elasticSearchConfiguration = elasticSearchConfiguration;
+            _esOptions = esOptions.Value;
             EsClient = GetClient();
         }
-
-
-        private readonly IElasticSearchConfiguration _elasticSearchConfiguration;
 
         /// <summary>
         /// GetClient
@@ -31,13 +30,13 @@ namespace Abp.ElasticSearch
         /// <returns></returns>
         private ElasticClient GetClient()
         {
-            var str = _elasticSearchConfiguration.ConnectionString;
+            var str = _esOptions.ConnectionString;
             var strs = str.Split('|');
             var nodes = strs.Select(s => new Uri(s)).ToList();
             var connectionPool = new StaticConnectionPool(nodes);
             var connectionString = new ConnectionSettings(connectionPool);
-            connectionString.BasicAuthentication(_elasticSearchConfiguration.AuthUserName,
-                _elasticSearchConfiguration.AuthPassWord);
+            connectionString.BasicAuthentication(
+                _esOptions.UserName, _esOptions.PassWord);
 
             return new ElasticClient(connectionString);
         }
