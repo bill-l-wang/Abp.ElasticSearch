@@ -8,8 +8,10 @@ namespace AbpNext.ElasticSearch
     /// <summary>
     /// 接口
     /// </summary>
-    public interface IElasticSearch
+    public interface IElasticSearchContext
     {
+        IElasticClient GetElasticClient(); 
+
         /// <summary>
         /// CreateEsIndex Not Mapping
         /// Auto Set Alias alias is Input IndexName

@@ -13,15 +13,20 @@ namespace AbpNext.ElasticSearch
     /// <summary>
     /// AbpElasticSearchPlug
     /// </summary>
-    public class AbpElasticSearch : IElasticSearch, ITransientDependency
+    public class ElasticSearchContext : IElasticSearchContext, ITransientDependency
     {
-        public IElasticClient EsClient { get; set; }
+        private readonly IElasticClient _esClient;
         private readonly AbpElasticSearchOptions _esOptions;
 
-        public AbpElasticSearch(IOptions<AbpElasticSearchOptions> esOptions)
+        public ElasticSearchContext(IOptions<AbpElasticSearchOptions> esOptions)
         {
             _esOptions = esOptions.Value;
-            EsClient = GetClient();
+            _esClient = GetClient();
+        }
+
+        public IElasticClient GetElasticClient()
+        {
+            return _esClient;
         }
 
         /// <summary>
@@ -51,12 +56,12 @@ namespace AbpNext.ElasticSearch
         /// <returns></returns>
         public virtual async Task CrateIndexAsync(string indexName, int shard = 1, int numberOfReplicas = 1)
         {
-            var exits = await EsClient.Indices.AliasExistsAsync(indexName);
+            var exits = await _esClient.Indices.AliasExistsAsync(indexName);
 
             if (exits.Exists)
                 return;
             var newName = indexName + DateTime.Now.Ticks;
-            var result = await EsClient
+            var result = await _esClient
                 .Indices.CreateAsync(newName,
                     ss =>
                         ss.Index(newName)
@@ -65,7 +70,7 @@ namespace AbpNext.ElasticSearch
                                     .Setting("max_result_window", int.MaxValue)));
             if (result.Acknowledged)
             {
-                await EsClient.Indices.PutAliasAsync(newName, indexName);
+                await _esClient.Indices.PutAliasAsync(newName, indexName);
                 return;
             }
 
@@ -85,12 +90,12 @@ namespace AbpNext.ElasticSearch
         public virtual async Task CreateIndexAsync<T, TKey>(string indexName, int shard = 1, int numberOfReplicas = 1)
             where T : class
         {
-            var exits = await EsClient.Indices.ExistsAsync(indexName);
+            var exits = await _esClient.Indices.ExistsAsync(indexName);
 
             if (exits.Exists)
                 return;
             var newName = indexName + DateTime.Now.Ticks;
-            var result = await EsClient
+            var result = await _esClient
                 .Indices.CreateAsync(newName,
                     ss =>
                         ss.Index(newName)
@@ -100,7 +105,7 @@ namespace AbpNext.ElasticSearch
                             .Map(m => m.AutoMap<T>()));
             if (result.Acknowledged)
             {
-                await EsClient.Indices.PutAliasAsync(newName, indexName);
+                await _esClient.Indices.PutAliasAsync(newName, indexName);
                 return;
             }
 
@@ -117,11 +122,11 @@ namespace AbpNext.ElasticSearch
         /// <returns></returns>
         public virtual async Task AddOrUpdateAsync<T, TKey>(string indexName, T model) where T : class
         {
-            var exits = EsClient.DocumentExists(DocumentPath<T>.Id(new Id(model)), dd => dd.Index(indexName));
+            var exits = _esClient.DocumentExists(DocumentPath<T>.Id(new Id(model)), dd => dd.Index(indexName));
 
             if (exits.Exists)
             {
-                var result = await EsClient.UpdateAsync(DocumentPath<T>.Id(new Id(model)),
+                var result = await _esClient.UpdateAsync(DocumentPath<T>.Id(new Id(model)),
                     ss => ss.Index(indexName).Doc(model).RetryOnConflict(3));
 
                 if (result.ServerError == null) return;
@@ -130,7 +135,7 @@ namespace AbpNext.ElasticSearch
             }
             else
             {
-                var result = await EsClient.IndexAsync<T>(model, ss => ss.Index(indexName));
+                var result = await _esClient.IndexAsync<T>(model, ss => ss.Index(indexName));
                 if (result.ServerError == null) return;
                 throw new ElasticSearchException($"Insert Document failed at index {indexName} :" +
                                                  result.ServerError.Error.Reason);
@@ -163,7 +168,7 @@ namespace AbpNext.ElasticSearch
                 bulk.Operations.Add(new BulkIndexOperation<T>(item));
             }
 
-            var response = await EsClient.BulkAsync(bulk);
+            var response = await _esClient.BulkAsync(bulk);
             if (response.Errors)
                 throw new ElasticSearchException(
                     $"Bulk InsertOrUpdate Document failed at index {indexName} :{response.ServerError.Error.Reason}");
@@ -180,7 +185,7 @@ namespace AbpNext.ElasticSearch
                 bulk.Operations.Add(new BulkDeleteOperation<T>(new Id(item)));
             }
 
-            var response = await EsClient.BulkAsync(bulk);
+            var response = await _esClient.BulkAsync(bulk);
             if (response.Errors)
                 throw new ElasticSearchException(
                     $"Bulk Delete Document at index {indexName} :{response.ServerError.Error.Reason}");
@@ -225,7 +230,7 @@ namespace AbpNext.ElasticSearch
         /// <returns></returns>
         public virtual async Task DeleteAsync<T, TKey>(string indexName, T model) where T : class
         {
-            var response = await EsClient.DeleteAsync(new DeleteRequest(indexName, new Id(model)));
+            var response = await _esClient.DeleteAsync(new DeleteRequest(indexName, new Id(model)));
             if (response.ServerError == null) return;
             throw new Exception($"Delete Document at index {indexName} :{response.ServerError.Error.Reason}");
         }
@@ -237,7 +242,7 @@ namespace AbpNext.ElasticSearch
         /// <returns></returns>
         public virtual async Task DeleteIndexAsync(string indexName)
         {
-            var response = await EsClient.Indices.DeleteAsync(indexName);
+            var response = await _esClient.Indices.DeleteAsync(indexName);
             if (response.Acknowledged) return;
             throw new Exception($"Delete index {indexName} failed :{response.ServerError.Error.Reason}");
         }
@@ -257,11 +262,11 @@ namespace AbpNext.ElasticSearch
         /// <returns></returns>
         public virtual async Task ReBuild<T, TKey>(string indexName) where T : class
         {
-            var result = await EsClient.Indices.GetAliasAsync(indexName);
+            var result = await _esClient.Indices.GetAliasAsync(indexName);
             var oldName = result.Indices.Keys.First();
             //创建新的索引
             var newIndex = indexName + DateTime.Now.Ticks;
-            var createResult = await EsClient.Indices.CreateAsync(newIndex,
+            var createResult = await _esClient.Indices.CreateAsync(newIndex,
                 c =>
                     c.Index(newIndex)
                         .Map(m => m.AutoMap<T>()));
@@ -271,7 +276,7 @@ namespace AbpNext.ElasticSearch
             }
 
             //重建索引数据
-            var reResult = await EsClient.ReindexOnServerAsync(descriptor => descriptor
+            var reResult = await _esClient.ReindexOnServerAsync(descriptor => descriptor
                 .Source(source => source.Index(indexName))
                 .Destination(dest => dest.Index(newIndex)));
 
@@ -281,8 +286,8 @@ namespace AbpNext.ElasticSearch
             }
 
             //删除旧索引
-            var deleteResult = await EsClient.Indices.DeleteAsync(oldName);
-            var reAliasResult = await EsClient.Indices.PutAliasAsync(newIndex, indexName);
+            var deleteResult = await _esClient.Indices.DeleteAsync(oldName);
+            var reAliasResult = await _esClient.Indices.PutAliasAsync(newIndex, indexName);
 
             if (!deleteResult.Acknowledged)
             {
@@ -345,7 +350,7 @@ namespace AbpNext.ElasticSearch
             query.Highlight(h => highlight);
             if (includeFields != null)
                 query.Source(ss => ss.Includes(ff => ff.Fields(includeFields.ToArray())));
-            var response = await EsClient.SearchAsync<T>(query);
+            var response = await _esClient.SearchAsync<T>(query);
             return response;
         }
 
@@ -353,7 +358,7 @@ namespace AbpNext.ElasticSearch
             Func<QueryContainerDescriptor<T>, QueryContainer> query)
             where T : class
         {
-            var response = await EsClient.CountAsync<T>(c => c.Index(indexName).Query(query));
+            var response = await _esClient.CountAsync<T>(c => c.Index(indexName).Query(query));
 
             return response;
         }
