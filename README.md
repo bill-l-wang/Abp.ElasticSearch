@@ -2,33 +2,30 @@
 abp vnext repository
 > https://github.com/abpframework/abp
 
-Nuget
-> https://www.nuget.org/packages/Abp.ElasticSearch/
+nuget
+> https://www.nuget.org/packages/AbpNext.ElasticSearch/
 
 
 ## Get Started 
 in Visual Studio,using the Package Manager Console :
-> Install-Package Abp.ElasticSearch
+> Install-Package AbpNext.ElasticSearch
 
-core Proejct open Module cs file
-
+Config Elasticsearch in your code
+ 
 ``` csharp
 [DependsOn(typeof(AbpElasticSearchModule))]
 public class CodeModule : AbpModule
 {
 
-    public override void PreInitialize()
+    public override void ConfigureServices()
     {
-        Configuration.Modules.ElasticSearch().ConnectionString = "your collectionstring";
-        Configuration.Modules.ElasticSearch().AuthUserName = "your authusername";
-        Configuration.Modules.ElasticSearch().AuthPassWord = "your authpassword";
+        Configure<AbpElasticSearchOptions>(options =>
+            {
+                options.ConnectionString = "http://yourServer";
+                options.UserName = "yourUsername";
+                options.PassWord = "yourPassword";
+            });
         //
-    }
-
-    public override void Initialize()
-    {
-        // 
-        IocManager.RegisterAssemblyByConvention(Assembly.GetExecutingAssembly());
     }
 }
 ```
